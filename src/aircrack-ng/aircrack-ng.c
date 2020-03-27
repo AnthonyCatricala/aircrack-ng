@@ -4871,9 +4871,51 @@ static int next_key(char ** key, int keysize)
 			if (tmp[i - 1] == '\n') tmp[--i] = '\0';
 			if (tmp[i - 1] == '\r') tmp[--i] = '\0';
 
-			i = 0;
+			// My code starts here.
 
-			hex = strsep(&tmp, ":");
+			/**
+			This aims to find the separator character in the wordlist entry stored
+			in the variable 'tmp'.
+
+			First we initialize last_separator to null, then we iterate through the
+			entry, and check if each character is a hex digit. When we find the first
+			non-hex digit, we make that our separator digit, and check to be sure
+			that all other non-hex digits are the same consistent separator.
+
+			*/
+
+			char last_separator = NULL;
+			// iterates through each character in the entry to look for separators
+			for (int j = 0; j < strlen(tmp); j++) {
+				if (!isxdigit(tmp[j])) {
+					if (tmp[j] != last_separator) {
+						// if it's the first time we've found a non-hex digit, this'll be
+						// what we set last_separator to.
+						if (last_separator == NULL) {
+							last_separator = tmp[j];
+						}
+						// otherwise, we've found some inconsistent separators
+						else {
+							// prints an error and exits if the separators are inconsistent
+							printf("ISSUE: Inconsistent separators!\n");
+							return (FAILURE);
+						}
+					}
+				}
+			}
+			/*
+			At this point, last_separator is our separator character. However,
+			strsep() only works with a string as the second argument. We can turn our
+			char last_separator into a string by making a null-terminated char* called
+			tmp_array.
+			*/
+			char *tmp_array[2];
+			tmp_array[0] = last_separator;
+			tmp_array[1] = '\0';
+
+			i = 0;
+      // This line now uses tmp_array as the separator instead of ":".
+			hex = strsep(&tmp, tmp_array);
 
 			while (i < keysize && hex != NULL)
 			{
@@ -4889,7 +4931,8 @@ static int next_key(char ** key, int keysize)
 				}
 
 				(*key)[i] = (uint8_t) dec;
-				hex = strsep(&tmp, ":");
+				// This line now uses tmp_array as the separator instead of ":".
+				hex = strsep(&tmp, tmp_array);
 				i++;
 			}
 			if (rtn)
