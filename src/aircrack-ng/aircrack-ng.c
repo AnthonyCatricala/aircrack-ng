@@ -4883,39 +4883,71 @@ static int next_key(char ** key, int keysize)
 			that all other non-hex digits are the same consistent separator.
 
 			*/
+			bool separators = NULL;
+			char * hex_with_separators = NULL;
+			char * hex_without_separators = NULL;
 
-			char last_separator = NULL;
-			// iterates through each character in the entry to look for separators
-			for (int j = 0; j < strlen(tmp); j++) {
-				if (!isxdigit(tmp[j])) {
-					if (tmp[j] != last_separator) {
-						// if it's the first time we've found a non-hex digit, this'll be
-						// what we set last_separator to.
-						if (last_separator == NULL) {
-							last_separator = tmp[j];
-						}
-						// otherwise, we've found some inconsistent separators
-						else {
-							// prints an error and exits if the separators are inconsistent
-							printf("ISSUE: Inconsistent separators!\n");
-							return (FAILURE);
-						}
+			int x = (strlen(tmp));
+
+			if (strlen(tmp) == 10) {
+				separators = false;
+				//checks if there's a non-hex digit in the entry
+				for (int j = 0; j < strlen(tmp); j++) {
+					if (!isxdigit(tmp[j])) {
+						separators = true;
 					}
 				}
 			}
-			/*
-			At this point, last_separator is our separator character. However,
-			strsep() only works with a string as the second argument. We can turn our
-			char last_separator into a string by making a null-terminated char* called
-			tmp_array.
-			*/
-			char *tmp_array[2];
-			tmp_array[0] = last_separator;
-			tmp_array[1] = '\0';
+			else {
+				separators = true;
+			}
+			if (separators) {
+				char last_separator = NULL;
+				// iterates through each character in the entry to look for separators
+				for (int j = 0; j < strlen(tmp); j++) {
+					if (!isxdigit(tmp[j])) {
+						if (tmp[j] != last_separator) {
+							// if it's the first time we've found a non-hex digit, this'll be
+							// what we set last_separator to.
+							if (last_separator == NULL) {
+								last_separator = tmp[j];
+							}
+							// otherwise, we've found some inconsistent separators
+							else {
+								// prints an error and exits if the separators are inconsistent
+								printf("ISSUE: Inconsistent separators!\n");
+								return (FAILURE);
+							}
+						}
+					}
+				}
+				/*
+				At this point, last_separator is our separator character. However,
+				strsep() only works with a string as the second argument. We can turn our
+				char last_separator into a string by making a null-terminated char* called
+				tmp_array.
+				*/
+				char * tmp_array[2];
+				tmp_array[0] = last_separator;
+				tmp_array[1] = '\0';
+				hex_with_separators = strsep(&tmp, tmp_array);
+			}
+			else {
+				// splits the string into 5 byte-long indexes
+			}
 
 			i = 0;
-      // This line now uses tmp_array as the separator instead of ":".
-			hex = strsep(&tmp, tmp_array);
+
+			if (separators) {
+				// This line now uses tmp_array as the separator instead of ":".
+				hex = hex_with_separators;
+			}
+			else {
+				//if there aren't separators, we can split up hex like this:
+				char hex_without_separators[256];
+				snprintf(hex_without_separators, sizeof hex_without_separators, "%c%c", tmp[0], tmp[1]);
+				hex = hex_without_separators;
+			}
 
 			while (i < keysize && hex != NULL)
 			{
@@ -4931,8 +4963,18 @@ static int next_key(char ** key, int keysize)
 				}
 
 				(*key)[i] = (uint8_t) dec;
-				// This line now uses tmp_array as the separator instead of ":".
-				hex = strsep(&tmp, tmp_array);
+
+				if (separators) {
+					// This line now uses tmp_array as the separator instead of ":".
+					hex = hex_with_separators;
+				}
+				else {
+					//if there aren't separators, we can split up hex like this:
+					char hex_without_separators[256];
+					snprintf(hex_without_separators, sizeof hex_without_separators, "%c%c", tmp[0], tmp[1]);
+					hex = hex_without_separators;
+				}
+
 				i++;
 			}
 			if (rtn)
