@@ -4883,24 +4883,17 @@ static int next_key(char ** key, int keysize)
 			that all other non-hex digits are the same consistent separator.
 
 			*/
-			bool separators = NULL;
+			bool separators = false;
 			char * hex_with_separators = NULL;
 			char * hex_without_separators = NULL;
 
-			int x = (strlen(tmp));
-
-			if (strlen(tmp) == 10) {
-				separators = false;
-				//checks if there's a non-hex digit in the entry
-				for (int j = 0; j < strlen(tmp); j++) {
-					if (!isxdigit(tmp[j])) {
-						separators = true;
-					}
+			//checks if there's a non-hex digit in the entry
+			for (int j = 0; j < strlen(tmp); j++) {
+				if (!isxdigit(tmp[j])) {
+					separators = true;
 				}
 			}
-			else {
-				separators = true;
-			}
+
 			if (separators) {
 				char last_separator = NULL;
 				// iterates through each character in the entry to look for separators
@@ -4930,6 +4923,7 @@ static int next_key(char ** key, int keysize)
 				char * tmp_array[2];
 				tmp_array[0] = last_separator;
 				tmp_array[1] = '\0';
+				// This line now uses tmp_array as the separator instead of ":".
 				hex_with_separators = strsep(&tmp, tmp_array);
 			}
 			else {
@@ -4939,7 +4933,6 @@ static int next_key(char ** key, int keysize)
 			i = 0;
 
 			if (separators) {
-				// This line now uses tmp_array as the separator instead of ":".
 				hex = hex_with_separators;
 			}
 			else {
@@ -4965,7 +4958,6 @@ static int next_key(char ** key, int keysize)
 				(*key)[i] = (uint8_t) dec;
 
 				if (separators) {
-					// This line now uses tmp_array as the separator instead of ":".
 					hex = hex_with_separators;
 				}
 				else {
