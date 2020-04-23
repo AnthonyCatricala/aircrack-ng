@@ -4886,7 +4886,7 @@ static int next_key(char ** key, int keysize)
 			bool separators = false;
 			char * hex_with_separators = NULL;
 			char * hex_without_separators = NULL;
-
+			char * separator_delimiter[2];
 			//checks if there's a non-hex digit in the entry
 			for (int j = 0; j < strlen(tmp); j++) {
 				if (!isxdigit(tmp[j])) {
@@ -4918,16 +4918,28 @@ static int next_key(char ** key, int keysize)
 				At this point, last_separator is our separator character. However,
 				strsep() only works with a string as the second argument. We can turn our
 				char last_separator into a string by making a null-terminated char* called
-				tmp_array.
+				separator_delimiter.
 				*/
-				char * tmp_array[2];
-				tmp_array[0] = last_separator;
-				tmp_array[1] = '\0';
-				// This line now uses tmp_array as the separator instead of ":".
-				hex_with_separators = strsep(&tmp, tmp_array);
+				char * separator_delimiter[2];
+				separator_delimiter[0] = last_separator;
+				separator_delimiter[1] = '\0';
+				// This line now uses separator_delimiter as the separator instead of ":".
+				hex_with_separators = strsep(&tmp, separator_delimiter);
 			}
+
 			else {
-				// splits the string into 5 byte-long indexes
+				// adds colons to string
+				char separated_string[sizeof(tmp)+10];
+				int k = 0;
+				for (int j = 0; j < strlen(tmp); j+=2) {
+					separated_string[k] = tmp[j];
+					separated_string[k+1] = tmp[j+1];
+					separated_string[k+2] = ':';
+					k+=3;
+				}
+				separated_string[k-1] = '\0';
+				char * running = strdupa(separated_string);
+				hex_without_separators = strsep(&running, ":");
 			}
 
 			i = 0;
@@ -4936,9 +4948,6 @@ static int next_key(char ** key, int keysize)
 				hex = hex_with_separators;
 			}
 			else {
-				//if there aren't separators, we can split up hex like this:
-				char hex_without_separators[256];
-				snprintf(hex_without_separators, sizeof hex_without_separators, "%c%c", tmp[0], tmp[1]);
 				hex = hex_without_separators;
 			}
 
@@ -4961,9 +4970,6 @@ static int next_key(char ** key, int keysize)
 					hex = hex_with_separators;
 				}
 				else {
-					//if there aren't separators, we can split up hex like this:
-					char hex_without_separators[256];
-					snprintf(hex_without_separators, sizeof hex_without_separators, "%c%c", tmp[0], tmp[1]);
 					hex = hex_without_separators;
 				}
 
